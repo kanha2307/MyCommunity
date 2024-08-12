@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import type { PropsWithChildren } from 'react';
+import  { PropsWithChildren } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -28,7 +28,7 @@ import { Provider } from "react-redux";
 import { store } from './src/redux/store';
 import AuthNavigator from './src/navigations/AuthNavigator';
 
-function App(): React.JSX.Element {
+function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {

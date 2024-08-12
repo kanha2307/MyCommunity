@@ -2,15 +2,19 @@ import React, { useEffect, useState } from 'react'
 import { ScrollView, Text, View, TextInput, Image, TouchableOpacity, ActivityIndicator } from 'react-native'
 import styles from "./style";
 import Ionicons from 'react-native-vector-icons/Ionicons'
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
-const Login = () => {
+
+const Login = ({navigation}) => {
   const [username, setUsername] = React.useState()
   const [password, setPassword] = React.useState()
   const [masked, setMasked] = React.useState(true)
   const [error, setError] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [token, setToken] = useState<string>('')
+  const [token, setToken] = useState('')
+  const navigate = useNavigation();
 
   useEffect(() => {
     setIsLoading(false)
@@ -33,13 +37,27 @@ const Login = () => {
 
         setIsLoading(true)
 
-        let result: any = await login(data)
+        let result = await login(data)
 
         console.log('Login -----', result)
 
         setToken(result.token)
 
         setIsLoading(false)
+
+        if (result.token) {
+          // Store the token in local storage or a state management solution
+          await AsyncStorage.setItem('token', result.token);
+  
+          // Navigate to Home and reset the navigation stack
+          navigate.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        }else {
+          setError(true);
+          setErrorMessage('Login failed. Please try again.');
+      }
 
       } else {
         setError(true)
@@ -51,7 +69,7 @@ const Login = () => {
     }
   }
 
-  const login = async (data: any) => {
+  const login = async (data) => {
     return new Promise(async (resolve, reject) => {
       try {
         let fetchParameter = {
@@ -62,7 +80,7 @@ const Login = () => {
             'Content-Type': 'application/json',
           },
         }
-        let serverResponse = await fetch('http://192.168.1.66:3000/v1/auth/login', fetchParameter);
+        let serverResponse = await fetch('http://192.168.43.15:3000/v1/auth/login', fetchParameter);
         console.log(serverResponse)
         let response = await serverResponse.json();
         resolve(response);
@@ -74,7 +92,7 @@ const Login = () => {
     })
   }
 
-  function notNull(val: any) {
+  function notNull(val) {
     return (val !== null && val !== undefined && val !== "NULL" && val !== "null" && val !== "undefined" && val !== "UNDEFINED" && (val + "").trim() !== "")
   }
 
@@ -99,7 +117,7 @@ const Login = () => {
         style={styles.phoneTextInput}
         maxLength={10}
         value={username}
-        onChangeText={(val: any) => {
+        onChangeText={(val) => {
           setUsername(val)
         }}
         keyboardType='default'
@@ -113,7 +131,7 @@ const Login = () => {
         style={styles.passwordInput}
         maxLength={10}
         value={password}
-        onChangeText={(val: any) => {
+        onChangeText={(val) => {
           setPassword(val)
         }}
         secureTextEntry={masked}
@@ -151,14 +169,6 @@ const Login = () => {
       </TouchableOpacity>
     </View>
 
-    {notNull(token) ?
-      <View style={{ width: '100%', backgroundColor: 'lightgrey', padding: 20, marginTop: 20 }}>
-        <Text style={{ color: 'black', fontSize: 10 }}>
-          {token}
-        </Text>
-      </View>
-      : null
-    }
 
   </ScrollView>
 
