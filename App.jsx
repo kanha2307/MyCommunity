@@ -30,6 +30,7 @@ import AuthNavigator from './src/navigations/AuthNavigator';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+   
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -37,7 +38,7 @@ function App() {
 
   return (
     <Provider store={store}>
-      <GestureHandlerRootView >
+      <GestureHandlerRootView  >
         <StatusBar
           animated={true}
           backgroundColor={Colors.black}
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   highlight: {
-    fontWeight: '700',
+    fontFamily:'Urbanist'
   },
 });
 
