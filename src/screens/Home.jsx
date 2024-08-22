@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
+import { useSelector } from 'react-redux';
 
 const Home = ({ navigation }) => {
+  const { avatar } = useSelector((state) => state.user);
   useEffect(() => {
     navigation.setOptions({
       headerStyle: {
@@ -10,7 +12,7 @@ const Home = ({ navigation }) => {
         
       },
       
-      headerTintColor: '#fff', // Color of the text and icons
+      headerTintColor: '#fff',
       headerTitleStyle: {
         fontFamily:'Urbanist',
         fontWeight:400
@@ -30,14 +32,17 @@ const Home = ({ navigation }) => {
           }}
           style={styles.iconContainer}
         >
-           <Image
-            source={require('../assets/avatar3.png')} // Replace with your image path or URL
-            style={styles.headerImage}
-          />
+             <Image
+            source={
+              avatar 
+                ? { uri: avatar }:
+                 require('../assets/avatar3.png')
+            }
+            style={styles.headerImage} />
           
         </TouchableOpacity>
       ),
-      headerTitle:navigation, // Title of the header
+      headerTitle:navigation,
     });
   }, [navigation]);
 

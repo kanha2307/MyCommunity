@@ -1,28 +1,37 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
-    name: true,
-    roll_no: true,
-    token:""
+    name: '',
+    email:'',
+    phoneNumber:'',
+    avatar:'',
+    token:''
 };
 
 export const userSlice = createSlice({
   name: 'app_state',
   initialState,
   reducers: {
-      set_name:(state,action) => {
+      setname:(state,action) => {
         state.name=action.payload
       },
-      set_roll_no:(state,action) =>{
-        state.roll_no = action.payload
+      setemail:(state,action) =>{
+        state.email = action.payload
       },
-      set_init_app_state:(state,action)=>{
+      setphone:(state,action) =>{
+        state.phoneNumber = action.payload
+      },
+      setavatar:(state,action) =>{
+        state.avatar = action.payload
+      },
+      settoken:(state,action) =>{
+        state.token = action.payload
+      },
+      set_init_app_state:()=>{
         return initialState
       },
   },
 })
-
-// Action creators are generated for each case reducer function
-export const { set_name,set_roll_no,set_init_app_state } = userSlice.actions
+export const { set_init_app_state,setavatar,setemail,setname,setphone,settoken } = userSlice.actions
 
 export default userSlice.reducer;

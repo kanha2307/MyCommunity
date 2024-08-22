@@ -5,6 +5,7 @@ const styles = StyleSheet.create({
     phoneTextInputContainer: {
         width: "75%",
         marginTop: 20,
+    
         borderBottomColor: '#565765',
         borderBottomWidth: 1
     },
@@ -17,6 +18,9 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         marginTop: 30,
+    },
+    orbuttonContainer: {
+        marginTop: 0,
     },
     buttonPill: {
         width: windowWidth * 0.75,
@@ -61,7 +65,23 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: 'red',
         fontWeight: '400'
-    }
+    },
+    orSeparatorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 20,
+        width: windowWidth * 0.75,
+      },
+      separatorLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#ccc',
+      },
+      orText: {
+        marginHorizontal: 10,
+        color: '#aaa',
+        fontSize: 16,
+      },
 });
 
 export default styles;
