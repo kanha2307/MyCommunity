@@ -1,12 +1,16 @@
-import React, { useEffect } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { Image } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
 
 const Profile = ({ navigation }) => {
+  const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const { name, email, phoneNumber, avatar, id } = useSelector((state) => state.user); // Assuming user ID is stored in the state
+
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('token');
@@ -19,19 +23,15 @@ const Profile = ({ navigation }) => {
     }
   };
 
-  const { name, email, phoneNumber, avatar } = useSelector((state) => state.user);
-
   useEffect(() => {
     navigation.setOptions({
       headerStyle: {
         backgroundColor: '#2D3553',
-
       },
-
       headerTintColor: '#fff',
       headerTitleStyle: {
         fontFamily: 'Urbanist',
-        fontWeight: 400
+        fontWeight: '400',
       },
       headerRight: () => (
         <TouchableOpacity
@@ -41,130 +41,132 @@ const Profile = ({ navigation }) => {
           <Ionicons name="log-out-outline" size={24} color="white" />
         </TouchableOpacity>
       ),
-      headerTitle: navigation, // Title of the header
+      headerTitle: 'Profile',
     });
   }, [navigation]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch('http://192.168.43.15:3000/posts/getpost'); // Replace with your actual API URL
+        const data = await response.json();
+        // Filter posts created by the current user
+        const userPosts = data.posts.filter(post => post.author._id === id);
+        setPosts(userPosts);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [id]);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.simpleContainer}>
-
-
-
-        <View style={styles.profileContainer}>
-          <Image
-            source={
-              avatar 
-                ? { uri: avatar }:
-                 require('../assets/avatar3.png')
-            }
-            style={styles.profileImage} />
-
-          <View style={styles.cont}>
-            <Text style={styles.profileName}>{name}</Text>
-            <Text style={styles.profilePhone}>{phoneNumber}</Text>
-            <Text style={styles.profilePhone}>{email}</Text>
-          </View>
-        </View>
-
-
-        <View style={styles.settingsContainer}>
-          <TouchableOpacity style={styles.settingsItem}>
-            <Ionicons name="settings-outline" style={{ color: 'white' }} size={24} />
-            <Text style={styles.settingsText}>Settings</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingsItem}>
-            <Ionicons name="leaf-outline" style={{ color: 'white' }} size={24} />
-            <Text style={styles.settingsText}>Account</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingsItem}>
-            <Ionicons name="log-out-outline" style={{ color: 'white' }} size={24} />
-            <Text onPress={handleLogout} style={styles.settingsText}>Log out</Text>
-          </TouchableOpacity>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.profileContainer}>
+        <Image
+          source={avatar ? { uri: avatar } : require('../assets/avatar3.png')}
+          style={styles.profileImage}
+        />
+        <View style={styles.profileDetails}>
+          <Text style={styles.profileName}>{name}</Text>
+          <Text style={styles.profileInfo}>{phoneNumber}</Text>
+          <Text style={styles.profileInfo}>{email}</Text>
         </View>
       </View>
-    </View>
+
+      <View style={styles.postsContainer}>
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#007bff" />
+        ) : posts.length > 0 ? (
+          posts.map((post) => (
+            <View key={post._id} style={styles.postCard}>
+              <Text style={styles.postTitle}>{post.title}</Text>
+              <Text style={styles.postDescription}>{post.description}</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.noPostsText}>No posts available.</Text>
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-   
-    justifyContent: 'center',
+    flexGrow: 1,
     alignItems: 'center',
-    fontFamily: 'Urbanist'
-  },
-  cont:{
-    display:'flex',
-    alignItems:'center'
-  },
-  simpleContainer: {
-    padding: 20,
-    width:'90%',
-    height:'70%',
-    borderRadius: 10,
-    backgroundColor: '#8f98ff'
-  },
-  headerImage: {
-    height: 40,
-    width: 40,
-    borderRadius: 100
-  },
-  text: {
-    fontFamily: 'Urbanist',
-
-    color: 'red'
-  },
-  iconContainer: {
-    paddingHorizontal: 16,
+    backgroundColor: '#f8f9fa',
   },
   profileContainer: {
-    display:'flex',
-    flexDirection:'row',
-    gap:20,
-    alignItems: 'center',
+    width: '90%',
+    padding: 20,
+    display:"flex",
+    alignItems:"center",
     justifyContent:'space-around',
-    marginBottom: 20,
-
+    flexDirection:"row",
+    backgroundColor: '#8f98ff',
+    borderRadius: 10,
+    alignItems: 'center',
+    marginVertical: 20,
   },
   profileImage: {
-    marginTop: 20,
     width: 120,
     height: 120,
-    borderRadius: 100,
+    borderRadius: 60,
+    marginBottom: 10,
+  },
+  profileDetails: {
+    alignItems: 'center',
   },
   profileName: {
     fontSize: 23,
     color: '#fff',
-    marginTop: 10,
+    fontWeight: 'bold',
   },
-  profilePhone: {
+  profileInfo: {
     fontSize: 16,
     color: '#EDEDFC',
     marginTop: 5,
   },
- 
-
-  settingsContainer: {
-    backgroundColor: '#2D32AA',
-    padding: 10,
-    
-
+  postsContainer: {
+    width: '90%',
+    backgroundColor: '#fff',
     borderRadius: 10,
-  },
-  settingsItem: {
-    flexDirection: 'row',
-    gap: 5,
     padding: 10,
-    alignItems: 'center',
-
   },
-  settingsText: {
+  postCard: {
+    marginBottom: 15,
+    padding: 15,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  postTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  postDescription: {
+    fontSize: 14,
+    color: '#333',
+  },
+  noPostsText: {
+    textAlign: 'center',
     fontSize: 16,
-    color: '#fff',
-    marginLeft: 10,
+    color: '#6c757d',
+    marginVertical: 20,
+  },
+  iconContainer: {
+    paddingHorizontal: 16,
   },
 });
 
-export default Profile
+export default Profile;
