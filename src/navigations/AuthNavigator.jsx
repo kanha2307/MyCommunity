@@ -12,15 +12,16 @@ const AuthNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Splash"
+        initialRouteName="Login"
         screenOptions={{ headerShown: false }}
       >
 
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="CreateAccount" component={CreateAccount} />
-       
         <Stack.Screen name="DrawerNavigator" component={DrawerNavigator} />
+       
+
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -3,6 +3,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import Home from '../screens//Home';
 import Login from '../screens/Login';
 import Profile from '../screens/Profile';
+import PostDetailScreen from '../screens/PostDetailScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -40,12 +41,12 @@ const DrawerNavigator = () => {
         component={Profile}
         options={{ headerShown: true }}
       />
-      <Drawer.Screen
-        name="Login"
-        
-        component={Login}
+         <Drawer.Screen
+        name="PostDetail"
+        component={PostDetailScreen} 
         options={{ headerShown: false }}
       />
+     
      
       
     </Drawer.Navigator>

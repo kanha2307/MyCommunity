@@ -4,9 +4,8 @@ import styles from './style';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
-import { setavatar, setemail, setname, setphone, settoken } from '../../redux/userSlice';
-import { log } from 'console';
+import { useDispatch, } from 'react-redux';
+import { setavatar, setemail, setid, setname, setphone, settoken } from '../../redux/userSlice';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -17,7 +16,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { name, phoneNumber, avatar } = useSelector((state) => state.user);
 
 
   const onSubmit = async () => {
@@ -32,13 +30,14 @@ const Login = () => {
         setIsLoading(true);
 
         const result = await login(data);
-
+        console.log("log result",result);
+        
         
         setIsLoading(false);
 
         if (result.token) {
           await AsyncStorage.setItem('token', result.token); 
-
+          dispatch(setid(result.user._id))
           dispatch(setname(result.user.name))
           dispatch(setavatar(result.user.avatar))
           dispatch(setemail(result.user.email))
@@ -47,7 +46,7 @@ const Login = () => {
           
           navigation.reset({
             index: 0,
-            routes: [{ name: 'DrawerNavigator' }], 
+            routes: [{ name:'DrawerNavigator'}], 
           });
         } else {
           setError(true);

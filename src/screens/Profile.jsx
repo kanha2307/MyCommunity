@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Image, ScrollView, ActivityIndicator } from 'react-native';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector } from 'react-redux';
@@ -8,36 +7,16 @@ import { useSelector } from 'react-redux';
 const Profile = ({ navigation }) => {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const { name, email, phoneNumber, avatar, id } = useSelector((state) => state.user); // Assuming user ID is stored in the state
 
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem('token');
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
-  };
+  const { name, email, phoneNumber, avatar, _id, role } = useSelector((state) => state.user);
 
+  // Update navigation options and header style
   useEffect(() => {
     navigation.setOptions({
-      headerStyle: {
-        backgroundColor: '#2D3553',
-      },
+      headerStyle: { backgroundColor: '#2D3553' },
       headerTintColor: '#fff',
-      headerTitleStyle: {
-        fontFamily: 'Urbanist',
-        fontWeight: '400',
-      },
       headerRight: () => (
-        <TouchableOpacity
-          onPress={handleLogout}
-          style={styles.iconContainer}
-        >
+        <TouchableOpacity onPress={handleLogout} style={styles.iconContainer}>
           <Ionicons name="log-out-outline" size={24} color="white" />
         </TouchableOpacity>
       ),
@@ -45,52 +24,82 @@ const Profile = ({ navigation }) => {
     });
   }, [navigation]);
 
+  // Fetch posts only on mount and when role or _id changes
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch('http://192.168.43.15:3000/posts/getpost'); // Replace with your actual API URL
+        const response = await fetch('http://192.168.43.15:3000/posts/getpost');
         const data = await response.json();
-        // Filter posts created by the current user
-        const userPosts = data.posts.filter(post => post.author._id === id);
-        setPosts(userPosts);
-        setIsLoading(false);
+
+        if (Array.isArray(data)) {
+          const userPosts = role === 'admin'
+            ? data.filter(post => post.author?._id === _id || post.savedBy?.includes(_id))
+            : data.filter(post => post.savedBy?.includes(_id));
+          setPosts(userPosts);
+        }
       } catch (error) {
         console.error('Error fetching posts:', error);
+      } finally {
         setIsLoading(false);
       }
     };
 
     fetchPosts();
-  }, [id]);
+  }, [_id, role]); // Dependencies: _id and role
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
+  const renderPosts = (title) => (
+    <View style={styles.postsContainer}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {isLoading ? (
+        <ActivityIndicator size="large" color="#007bff" />
+      ) : posts.length > 0 ? (
+        <View style={styles.postsGrid}>
+          {posts.map((post) => (
+            <TouchableOpacity
+              key={post._id}
+              onPress={() => navigation.navigate('PostDetails', { post })}
+              style={styles.postItem}
+            >
+              <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.noPostsText}>No posts available.</Text>
+      )}
+    </View>
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.profileContainer}>
-        <Image
-          source={avatar ? { uri: avatar } : require('../assets/avatar3.png')}
-          style={styles.profileImage}
-        />
-        <View style={styles.profileDetails}>
-          <Text style={styles.profileName}>{name}</Text>
-          <Text style={styles.profileInfo}>{phoneNumber}</Text>
-          <Text style={styles.profileInfo}>{email}</Text>
+        <View style={styles.profileDetailsContainer}>
+          <Image
+            source={avatar ? { uri: avatar } : require('../assets/avatar3.png')}
+            style={styles.profileImage}
+          />
+          <View style={styles.profileDetails}>
+            <Text style={styles.profileName}>{name}</Text>
+            <Text style={styles.profileEmail}>{email}</Text>
+            <Text style={styles.profilePhone}>{phoneNumber}</Text>
+          </View>
         </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.buttonText}>Logout</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.postsContainer}>
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#007bff" />
-        ) : posts.length > 0 ? (
-          posts.map((post) => (
-            <View key={post._id} style={styles.postCard}>
-              <Text style={styles.postTitle}>{post.title}</Text>
-              <Text style={styles.postDescription}>{post.description}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.noPostsText}>No posts available.</Text>
-        )}
-      </View>
+      {role === 'admin' && renderPosts('Created Posts')}
+      {renderPosts('Saved Posts')}
     </ScrollView>
   );
 };
@@ -98,71 +107,84 @@ const Profile = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#000',
+    padding: 20,
   },
   profileContainer: {
-    width: '90%',
-    padding: 20,
-    display:"flex",
-    alignItems:"center",
-    justifyContent:'space-around',
-    flexDirection:"row",
-    backgroundColor: '#8f98ff',
-    borderRadius: 10,
-    alignItems: 'center',
-    marginVertical: 20,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
   },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  profileDetailsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 10,
   },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderColor: '#fff',
+    borderWidth: 2,
+    marginRight: 20,
+  },
   profileDetails: {
-    alignItems: 'center',
+    flex: 1,
   },
   profileName: {
-    fontSize: 23,
+    fontSize: 22,
     color: '#fff',
     fontWeight: 'bold',
   },
-  profileInfo: {
+  profileEmail: {
     fontSize: 16,
-    color: '#EDEDFC',
-    marginTop: 5,
+    color: '#aaa',
+  },
+  profilePhone: {
+    fontSize: 16,
+    color: '#aaa',
+  },
+  logoutButton: {
+    backgroundColor: '#E02424',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignSelf: 'center',
+    marginTop: 15,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
   },
   postsContainer: {
-    width: '90%',
-    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    marginTop: 20,
+  },
+  postsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  postItem: {
+    width: '48%',
+    marginVertical: 5,
+  },
+  postImage: {
+    width: '100%',
+    height: 150,
     borderRadius: 10,
-    padding: 10,
-  },
-  postCard: {
-    marginBottom: 15,
-    padding: 15,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  postTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  postDescription: {
-    fontSize: 14,
-    color: '#333',
   },
   noPostsText: {
-    textAlign: 'center',
+    color: '#888',
     fontSize: 16,
-    color: '#6c757d',
+    textAlign: 'center',
     marginVertical: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   iconContainer: {
     paddingHorizontal: 16,

@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import SplashScreen from '../screens/SplashScreen';
 import Login from '../screens/Login';
 import DrawerNavigator from './DrawerNavigator'; // Import DrawerNavigator
+import PostDetailScreen from '../screens/PostDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -17,6 +18,8 @@ const AuthNavigator = () => {
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="DrawerNavigator" component={DrawerNavigator} />
+        
+        
       </Stack.Navigator>
     </NavigationContainer>
   );

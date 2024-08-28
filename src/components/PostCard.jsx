@@ -1,14 +1,43 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ToastAndroid } from 'react-native'; // Import ToastAndroid for displaying messages
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import moment from 'moment';
+import { useSelector } from 'react-redux'; // To get the current user
+import { useNavigation } from '@react-navigation/native';
 
-const PostCard = ({ post }) => {
-  console.log(post);
-  
+const PostCard = ({ post, handleLikeOrUnlike, handleSaveOrUnsave }) => {
+  const navigation = useNavigation();
+  const { _id } = useSelector((state) => state.user); // Get the logged-in user
+
+  // State to track if the post is being saved
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(Array.isArray(post.savedBy) && post.savedBy.includes(_id));
+
+  // Check if the post is liked by the current user
+  const isLiked = Array.isArray(post.likes) && post.likes.includes(_id);
+
+  const handleSavePress = async () => {
+    setIsSaving(true); // Start the saving process
+    try {
+      // Call the save/unsave function
+      await handleSaveOrUnsave(post._id);
+      
+      // Update local state based on the new saved state
+      setIsSaved(!isSaved);
+      
+      // Display appropriate message based on the new state
+      const message = isSaved ? 'Post unsaved!' : 'Post saved successfully!';
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } catch (error) {
+      console.error('Error saving post:', error);
+      ToastAndroid.show('Error saving post. Please try again.', ToastAndroid.SHORT);
+    } finally {
+      setIsSaving(false); // End the saving process
+    }
+  };
+
   return (
-    
-    <View style={styles.cardContainer}>
+    <TouchableOpacity onPress={() => navigation.navigate('PostDetail', { postId: post._id })} style={styles.cardContainer}>
       {/* Post Header */}
       <View style={styles.headerContainer}>
         <Image
@@ -21,7 +50,7 @@ const PostCard = ({ post }) => {
         </View>
       </View>
       <View>
-        <Text style={styles.posttitle}>{post.title}</Text>
+        <Text style={styles.postTitle}>{post.title}</Text>
       </View>
 
       {/* Post Image */}
@@ -39,25 +68,40 @@ const PostCard = ({ post }) => {
 
       {/* Post Footer */}
       <View style={styles.footerContainer}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Ionicons name="heart-outline" size={20} color="#333" />
+        <TouchableOpacity
+          style={styles.footerButton}
+          onPress={() => handleLikeOrUnlike(post._id)} // Trigger like/unlike action
+        >
+          <Ionicons
+            name={isLiked ? "heart" : "heart-outline"} // Conditionally render filled or outlined heart
+            size={20}
+            color={isLiked ? "red" : "#aaa"} // Red heart if liked, gray otherwise
+          />
           <Text style={styles.footerText}>{post.likes.length}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerButton}>
-          <Ionicons name="chatbubble-outline" size={20} color="#333" />
+          <Ionicons name="chatbubble-outline" size={20} color="#aaa" />
           <Text style={styles.footerText}>{post.comments.length}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Ionicons name="bookmark-outline" size={20} color="#333" />
+        <TouchableOpacity
+          style={styles.footerButton}
+          onPress={handleSavePress} // Trigger save/unsave action
+        >
+          <Ionicons
+            name={isSaved ? "bookmark" : "bookmark-outline"} // Conditionally render filled or outlined bookmark
+            size={20}
+            color={isSaved ? "white" : "#aaa"} // White bookmark if saved, gray otherwise
+          />
+          <Text style={styles.footerText}>{post.savedBy.length}</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#333', // Updated background to a dark gray
     borderRadius: 10,
     marginVertical: 10,
     padding: 15,
@@ -76,40 +120,37 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    
     marginRight: 10,
-    objectFit:"cover"
   },
   authorDetails: {
     flexDirection: 'column',
   },
-  posttitle:{
+  postTitle: {
     fontWeight: 'bold',
     fontSize: 16,
+    color: '#fff', // White for better contrast
   },
   authorName: {
     fontWeight: 'bold',
-    fontSize: 19,
+    fontSize: 16,
+    color: '#fff', // White for better contrast
   },
   timestamp: {
-    color: '#666',
+    color: '#ccc', // Light gray for subtle contrast
     fontSize: 12,
   },
   postImage: {
     width: '100%',
     height: 250,
-    
     borderRadius: 10,
     marginVertical: 10,
-    objectFit:"cover",
-    
   },
   descriptionContainer: {
     marginBottom: 10,
   },
   description: {
     fontSize: 14,
-    color: '#333',
+    color: '#ddd', // Light gray for the description text
   },
   footerContainer: {
     flexDirection: 'row',
@@ -124,7 +165,7 @@ const styles = StyleSheet.create({
   footerText: {
     marginLeft: 5,
     fontSize: 14,
-    color: '#333',
+    color: '#aaa', // Light gray for footer text
   },
 });
 

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { useSelector } from 'react-redux';
-import PostCard from '../components/PostCard'; // Assuming you've created the PostCard component as suggested earlier
+import PostCard from '../components/PostCard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Home = ({ navigation }) => {
-  const { avatar } = useSelector((state) => state.user);
+  const { avatar, _id } = useSelector((state) => state.user);
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -46,21 +47,149 @@ const Home = ({ navigation }) => {
     try {
       const response = await fetch('http://192.168.43.15:3000/posts/getpost'); // Replace with your actual API URL
       const data = await response.json();
-      console.log('Fetched posts data:', data);
-      
-      // Set posts directly if data is an array
+
       if (Array.isArray(data)) {
-        setPosts(data);
+        // Add current user ID to posts for save/unsave checks
+        const updatedPosts = data.map(post => ({
+          ...post,
+          savedBy: post.savedBy || [], // Ensure savedBy is an array
+          currentUserId: _id,
+        }));
+        setPosts(updatedPosts);
       } else {
-        console.error('Unexpected data format:', data);
+        console.error('Unexpected data:', data);
         setPosts([]);
       }
-      
+
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching posts:', error);
       setPosts([]);
       setIsLoading(false);
+    }
+  };
+
+  const likePost = async (postId) => {
+    const token = await AsyncStorage.getItem('token');
+    try {
+      const response = await fetch(`http://192.168.43.15:3000/posts/like/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('HTTP Error:', response.status, errorText);
+        return;
+      }
+
+      fetchPosts();
+    } catch (error) {
+      console.error('Error liking the post:', error);
+    }
+  };
+
+  const unlikePost = async (postId) => {
+    const token = await AsyncStorage.getItem('token');
+    try {
+      const response = await fetch(`http://192.168.43.15:3000/posts/unlike/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('HTTP Error:', response.status, errorText);
+        return;
+      }
+
+      fetchPosts();
+    } catch (error) {
+      console.error('Error unliking the post:', error);
+    }
+  };
+
+  const handleLikeOrUnlike = async (postId) => {
+    const targetPost = posts.find(post => post._id === postId);
+    if (!targetPost) return;
+
+    const isPostLiked = targetPost.likes.includes(_id);
+    try {
+      if (isPostLiked) {
+        await unlikePost(postId);
+      } else {
+        await likePost(postId);
+      }
+    } catch (error) {
+      console.error('Error handling like/unlike:', error);
+    }
+  };
+
+  const savePost = async (postId) => {
+    const token = await AsyncStorage.getItem('token');
+    try {
+      const response = await fetch(`http://192.168.43.15:3000/posts/${postId}/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('HTTP Error:', response.status, errorText);
+        return;
+      }
+
+      fetchPosts();
+    } catch (error) {
+      console.error('Error saving the post:', error);
+    }
+  };
+
+  const unsavePost = async (postId) => {
+    const token = await AsyncStorage.getItem('token');
+    try {
+      const response = await fetch(`http://192.168.43.15:3000/posts/${postId}/unsave`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('HTTP Error:', response.status, errorText);
+        return;
+      }
+
+      fetchPosts();
+    } catch (error) {
+      console.error('Error unsaving the post:', error);
+    }
+  };
+
+  const handleSaveOrUnsave = async (postId) => {
+    const targetPost = posts.find(post => post._id === postId);
+    if (!targetPost) return;
+
+    const isPostSaved = targetPost.savedBy.includes(_id);
+    try {
+      if (isPostSaved) {
+        await unsavePost(postId);
+      } else {
+        await savePost(postId);
+      }
+    } catch (error) {
+      console.error('Error handling save/unsave:', error);
     }
   };
 
@@ -74,7 +203,9 @@ const Home = ({ navigation }) => {
         <ActivityIndicator size="large" color="#007bff" />
       ) : (
         posts.length > 0 ? (
-          posts.map((post, index) => <PostCard key={post._id} post={post} />) // Use post._id for unique keys
+          posts.map((post) => (
+            <PostCard key={post._id} post={post} handleLikeOrUnlike={handleLikeOrUnlike} handleSaveOrUnsave={handleSaveOrUnsave} />
+          ))
         ) : (
           <Text style={styles.noPostsText}>No posts available.</Text>
         )
@@ -87,12 +218,14 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 10,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#000',
   },
   headerImage: {
     height: 40,
     width: 40,
     borderRadius: 100,
+    borderColor: '#fff',
+    borderWidth: 1,
   },
   iconContainer: {
     paddingHorizontal: 16,
@@ -100,7 +233,7 @@ const styles = StyleSheet.create({
   noPostsText: {
     textAlign: 'center',
     fontSize: 18,
-    color: '#6c757d',
+    color: '#aaa',
     fontFamily: 'Urbanist',
     marginTop: 20,
   },

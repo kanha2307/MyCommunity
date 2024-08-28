@@ -54,7 +54,8 @@ const CreateAccount = () => {
 
         if (result.token) {
           await AsyncStorage.setItem('token', result.token);
-
+          dispatch(setavatar(result.user.avatar))
+          dispatch(setid(result.user._id))
           dispatch(setname(result.user.name));
           dispatch(setemail(result.user.email));
           dispatch(setphone(result.user.phoneNumber));
